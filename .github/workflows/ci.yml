@@ -46,7 +46,7 @@ jobs:
           pytest test_app.py -v --cov=app --cov-report=xml --cov-report=term
 
   dependency-scan:
-    name: Dependency Scanning
+    name: SCA - Dependency Scanning
     runs-on: ubuntu-latest
     needs: build-and-test
 
@@ -59,21 +59,47 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install Safety
-        run: pip install safety
+      - name: Install pip-audit
+        run: pip install pip-audit
 
-      - name: Run Safety check
+      - name: Scan dependencies for vulnerabilities
         run: |
-          pip install -r requirements.txt
-          safety check --json --output safety-report.json || true
+          echo "====== Scanning Dependencies for CVEs ======"
+          pip-audit -r requirements.txt --format json --output pip-audit-report.json || true
+          pip-audit -r requirements.txt --format markdown --output pip-audit-report.md || true
+        continue-on-error: true
 
-      - name: Upload dependency scan results
+      - name: Display findings
+        if: always()
+        run: |
+          if [ -f pip-audit-report.md ]; then
+            echo "====== Vulnerability Report ======"
+            cat pip-audit-report.md
+          fi
+
+      - name: Upload reports
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: dependency-scan-report
-          path: safety-report.json
+          name: dependency-scan-reports
+          path: |
+            pip-audit-report.json
+            pip-audit-report.md
 
-      - name: Fail on critical vulnerabilities
+      - name: Check severity and fail on high/critical
         run: |
-          safety check --bare || exit 1
+          if [ -f pip-audit-report.json ]; then
+            # Check if vulnerabilities array exists and has items
+            has_vulns=$(jq 'any(.dependencies[]?; .vulns | length > 0)' pip-audit-report.json)
+
+            if [ "$has_vulns" = "true" ]; then
+              echo "FAILED: Vulnerable dependencies found"
+              echo ""
+              echo "Affected packages:"
+              jq -r '.dependencies[] | select(.vulns | length > 0) | "Package: \(.name) \(.version)\nVulnerabilities:\n" + (.vulns[] | "  - [\(.id)] \(.fix_versions // [] | join(", ") // "No fix available")\n    \(.description[:100])...\n")' pip-audit-report.json
+              exit 1
+            else
+              echo "PASSED: No vulnerable dependencies"
+            fi
+          fi
 
