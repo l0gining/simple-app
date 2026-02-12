@@ -1,7 +1,7 @@
 flask==3.0.0
 werkzeug==3.1.5
 pytest==8.0.0
-pytest-cov==4.1.8
+pytest-cov==4.1.0
 requests==2.32.4
 urlib3==2.2.0
 idna==3.10
