@@ -39,13 +39,13 @@ jobs:
 
             if [ "$critical" -gt 0 ]; then
               echo ""
-              echo "❌ SAST Quality Gate FAILED"
+              echo "SAST FAILED"
               echo ""
               echo "Findings:"
               jq -r '.results[] | select(.extra.severity == "ERROR") | "[\(.extra.severity)] \(.check_id)\n  File: \(.path):\(.start.line)\n  Message: \(.extra.message)\n"' semgrep-report.json
               exit 1
             else
-              echo "✅ SAST Quality Gate PASSED"
+              echo "SAST PASSED"
             fi
           fi
 
