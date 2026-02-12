@@ -22,7 +22,7 @@ jobs:
         run: semgrep scan --config auto --json --output semgrep-report.json
 
       - name: Upload Semgrep report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: semgrep-sast-report
