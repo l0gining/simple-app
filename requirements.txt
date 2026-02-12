@@ -2,4 +2,4 @@ flask==2.3.0
 werkzeug==2.3.0
 pytest==7.4.0
 pytest-cov==4.1.0
-requests==2.25.0 # Vulnerable version
+requests==2.31.0
