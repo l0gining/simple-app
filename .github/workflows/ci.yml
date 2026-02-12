@@ -44,3 +44,36 @@ jobs:
       - name: Run tests
         run: |
           pytest test_app.py -v --cov=app --cov-report=xml --cov-report=term
+
+  dependency-scan:
+    name: Dependency Scanning
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Run Safety check
+        run: |
+          pip install -r requirements.txt
+          safety check --json --output safety-report.json || true
+
+      - name: Upload dependency scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-scan-report
+          path: safety-report.json
+
+      - name: Fail on critical vulnerabilities
+        run: |
+          safety check --bare || exit 1
+
